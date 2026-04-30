@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ── Light theme ──────────────────────────────── */
+    --c-page:           249 250 251;   /* gray-50  */
+    --c-surface:        255 255 255;   /* white    */
+    --c-surface-2:      243 244 246;   /* gray-100 */
+    --c-surface-3:      229 231 235;   /* gray-200 */
+    --c-edge:           229 231 235;   /* gray-200 */
+    --c-edge-2:         209 213 219;   /* gray-300 */
+    --c-content:        17  24  39;    /* gray-900 */
+    --c-content-2:      55  65  81;    /* gray-700 */
+    --c-content-muted:  107 114 128;   /* gray-500 */
+    --c-content-subtle: 156 163 175;   /* gray-400 */
+  }
+
+  .dark {
+    /* ── Dark theme ───────────────────────────────── */
+    --c-page:           3   7  18;     /* gray-950 */
+    --c-surface:        17  24  39;    /* gray-900 */
+    --c-surface-2:      31  41  55;    /* gray-800 */
+    --c-surface-3:      55  65  81;    /* gray-700 */
+    --c-edge:           55  65  81;    /* gray-700 */
+    --c-edge-2:         75  85  99;    /* gray-600 */
+    --c-content:        249 250 251;   /* gray-50  */
+    --c-content-2:      209 213 219;   /* gray-300 */
+    --c-content-muted:  156 163 175;   /* gray-400 */
+    --c-content-subtle: 107 114 128;   /* gray-500 */
+  }
+
+  body {
+    @apply bg-page text-content antialiased;
+  }
+}

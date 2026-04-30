@@ -1,0 +1,202 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["public"]
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SCHEMA PUBLIC — tablas globales (un registro por instancia, no por tenant)
+//
+// Las tablas tenant-scoped (users, employees, products, stock, sales,
+// customers, branches) viven en schemas separados tenant_{id} y se
+// gestionan via SQL raw / migrations manuales (ver prisma/tenant-schema.sql).
+// Prisma no soporta N schemas dinámicos en un solo schema.prisma.
+// ════════════════════════════════════════════════════════════════════════════
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum PlanName {
+  free
+  pro
+  premium
+  super
+
+  @@schema("public")
+}
+
+enum TenantStatus {
+  trial
+  active
+  suspended
+  cancelled
+
+  @@schema("public")
+}
+
+enum SubStatus {
+  trialing
+  active
+  past_due
+  unpaid
+  cancelled
+
+  @@schema("public")
+}
+
+enum PaymentProvider {
+  stripe
+  mercadopago
+  manual
+
+  @@schema("public")
+}
+
+// ─── Plans ──────────────────────────────────────────────────────────────────
+
+model Plan {
+  id             String   @id @default(uuid())
+  name           PlanName @unique
+  displayName    String   @map("display_name")
+  priceArs       Decimal  @default(0)    @map("price_ars") @db.Decimal(10, 2)
+  priceUsd       Decimal  @default(0)    @map("price_usd") @db.Decimal(10, 2)
+  // NULL = ilimitado
+  maxProducts    Int?     @map("max_products")
+  maxBranches    Int?     @map("max_branches")
+  maxUsers       Int?     @map("max_users")
+  maxEmployees   Int?     @map("max_employees")
+  syncEnabled    Boolean  @default(false) @map("sync_enabled")
+  analyticsLevel String   @default("none") @map("analytics_level")
+  apiAccess      Boolean  @default(false) @map("api_access")
+  // IDs en proveedores de pago
+  stripePriceIdMonthly String? @map("stripe_price_id_monthly")
+  mpPlanId             String? @map("mp_plan_id")
+  isActive      Boolean  @default(true)  @map("is_active")
+  sortOrder     Int      @default(0)     @map("sort_order")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  tenants       Tenant[]
+  subscriptions Subscription[]
+
+  @@map("plans")
+  @@schema("public")
+}
+
+// ─── Tenants ─────────────────────────────────────────────────────────────────
+
+model Tenant {
+  id               String       @id @default(uuid())
+  slug             String       @unique
+  name             String
+  email            String       @unique
+  phone            String?
+  taxId            String?      @map("tax_id")
+  country          String       @default("AR") @db.Char(2)
+  timezone         String       @default("America/Argentina/Buenos_Aires")
+  planId           String       @map("plan_id")
+  plan             Plan         @relation(fields: [planId], references: [id])
+  planExpiresAt    DateTime?    @map("plan_expires_at")
+  status           TenantStatus @default(trial)
+  trialEndsAt      DateTime?    @map("trial_ends_at")
+  // IDs en proveedores de pago
+  stripeCustomerId String?      @map("stripe_customer_id")
+  mpPayerId        String?      @map("mp_payer_id")
+  // Configuración libre del tenant
+  settings         Json         @default("{}") @db.JsonB
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt      @map("updated_at")
+
+  subscriptions Subscription[]
+  billingEvents BillingEvent[]
+
+  @@index([slug])
+  @@index([status])
+  @@index([planId])
+  @@map("tenants")
+  @@schema("public")
+}
+
+// ─── Subscriptions ───────────────────────────────────────────────────────────
+
+model Subscription {
+  id                  String          @id @default(uuid())
+  tenantId            String          @map("tenant_id")
+  tenant              Tenant          @relation(fields: [tenantId], references: [id])
+  planId              String          @map("plan_id")
+  plan                Plan            @relation(fields: [planId], references: [id])
+  status              SubStatus       @default(trialing)
+  provider            PaymentProvider
+  providerCustomerId  String?         @map("provider_customer_id")
+  providerSubId       String?         @map("provider_sub_id")
+  currentPeriodStart  DateTime        @map("current_period_start")
+  currentPeriodEnd    DateTime        @map("current_period_end")
+  gracePeriodEndsAt   DateTime?       @map("grace_period_ends_at")
+  cancelAtPeriodEnd   Boolean         @default(false) @map("cancel_at_period_end")
+  cancelledAt         DateTime?       @map("cancelled_at")
+  currency            String          @default("ARS") @db.Char(3)
+  amount              Decimal         @db.Decimal(10, 2)
+  metadata            Json            @default("{}") @db.JsonB
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt      @map("updated_at")
+
+  billingEvents BillingEvent[]
+
+  // Solo una suscripción activa por tenant a la vez
+  @@unique([tenantId, status], name: "one_active_per_tenant")
+  @@index([tenantId])
+  @@index([provider, providerSubId])
+  @@index([status, currentPeriodEnd])
+  @@map("subscriptions")
+  @@schema("public")
+}
+
+// ─── Billing Events (append-only, auditoría) ─────────────────────────────────
+
+model BillingEvent {
+  id              String        @id @default(uuid())
+  tenantId        String        @map("tenant_id")
+  tenant          Tenant        @relation(fields: [tenantId], references: [id])
+  subId           String?       @map("sub_id")
+  sub             Subscription? @relation(fields: [subId], references: [id])
+  eventType       String        @map("event_type")
+  provider        String
+  // Idempotencia: evitar procesar el mismo evento dos veces
+  providerEventId String?       @map("provider_event_id")
+  amount          Decimal?      @db.Decimal(10, 2)
+  currency        String?       @db.Char(3)
+  status          String?
+  rawPayload      Json          @map("raw_payload") @db.JsonB
+  processedAt     DateTime      @default(now()) @map("processed_at")
+
+  @@unique([provider, providerEventId])
+  @@index([tenantId, processedAt(sort: Desc)])
+  @@map("billing_events")
+  @@schema("public")
+}
+
+// ─── Refresh Tokens ──────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id          String    @id @default(uuid())
+  // user_id y tenant_id como strings — los usuarios viven en schemas por tenant
+  userId      String    @map("user_id")
+  tenantId    String    @map("tenant_id")
+  tokenHash   String    @unique @map("token_hash")  // sha256(raw_token)
+  deviceId    String    @map("device_id")
+  deviceName  String?   @map("device_name")
+  ipAddress   String?   @map("ip_address")
+  userAgent   String?   @map("user_agent")
+  expiresAt   DateTime  @map("expires_at")
+  revokedAt   DateTime? @map("revoked_at")
+  lastUsedAt  DateTime  @default(now()) @map("last_used_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, tenantId], name: "idx_rt_user_tenant")
+  @@index([tokenHash],        name: "idx_rt_token_hash")
+  @@map("refresh_tokens")
+  @@schema("public")
+}

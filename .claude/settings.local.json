@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/c/saas/backend/**)",
+      "Bash(pnpm add *)",
+      "Bash(npm install *)",
+      "Bash(npx jest *)",
+      "Bash(npx tsc *)",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\(d.get\\('types',d.get\\('typings',''\\)\\)\\)\")",
+      "Bash(node -e \"const pkg=require\\('/c/saas/backend/node_modules/stripe/package.json'\\);console.log\\(pkg.types||pkg.typings\\)\")",
+      "Bash(node -e \"const Stripe=require\\('stripe'\\);const s=new Stripe\\('sk_test_x',{apiVersion:'2026-03-25.dahlia'}\\);console.log\\('ok'\\)\")",
+      "Bash(node -e \"const s=require\\('stripe'\\);console.log\\(Object.keys\\(s\\).slice\\(0,10\\)\\)\")",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(sed -n '123,170p' c:/saas/frontend/src/shared/types/index.ts)",
+      "Bash(sed -n '123,170p' c:/saas/frontend/src/shared/types.ts)",
+      "Bash(npx vitest *)",
+      "Bash(npm run *)",
+      "Bash(xargs grep *)",
+      "Bash(npx prisma *)",
+      "Bash(psql \"postgresql://saas:saas_dev@localhost:5433/saas_dev\" -c \"DROP SCHEMA IF EXISTS tenant_5d8fcd7a_1eaf_4874_84af_443e89fddf80 CASCADE; DELETE FROM public.tenants WHERE slug = 'mi-tienda-dev';\")",
+      "Bash(node -e ' *)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //PID 5064 //F)",
+      "Bash(taskkill //PID 26080 //F)",
+      "Bash(node -e \"const mp = require\\('/c/saas/backend/node_modules/mercadopago'\\); console.log\\(Object.keys\\(mp\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/zustand/package.json'\\).version\\)\")"
+    ]
+  }
+}

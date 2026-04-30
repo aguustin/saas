@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "assets": [
+      { "include": "../prisma/*.sql", "outDir": "./dist/prisma", "watchAssets": true }
+    ],
+    "plugins": ["@nestjs/swagger"],
+    "paths": {
+      "@common/*": ["src/common/*"],
+      "@config/*": ["src/config/*"],
+      "@modules/*": ["src/modules/*"]
+    }
+  }
+}

@@ -1,0 +1,3 @@
+  Tenant ID : 8d8e481b-cbe2-4858-bb13-a01e13f0d71c
+  Email     : admin@mitienda.com
+  Password  : Admin1234!
