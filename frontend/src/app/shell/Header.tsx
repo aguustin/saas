@@ -3,6 +3,7 @@ import { Bell, Copy, Check } from 'lucide-react'
 import { useState, useCallback } from 'react'
 import { useBillingStore } from '@/features/billing/store/billing.store'
 import { SyncStatusIndicator } from '@/features/sync/components/SyncStatusIndicator'
+import { LowStockBadge } from '@/features/stock/components/LowStockBadge'
 import { ThemeToggle } from '@/shared/components/ui'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useToast } from '@/shared/components/ui/Toast'
@@ -12,7 +13,8 @@ const ROUTE_LABELS: Record<string, string> = {
   '/app/pos':       'Punto de Venta',
   '/app/sales':     'Ventas',
   '/app/products':  'Productos',
-  '/app/stock':     'Stock',
+  '/app/stock':           'Stock',
+  '/app/stock/movements': 'Movimientos de Stock',
   '/app/employees': 'Empleados',
   '/app/users':     'Usuarios',
   '/app/billing':   'Facturación',
@@ -83,6 +85,7 @@ export function Header() {
     <header className="h-16 bg-surface border-b border-edge flex items-center px-6 gap-4">
       <h2 className="text-lg font-semibold text-content flex-1">{label}</h2>
       <SyncStatusIndicator />
+      <LowStockBadge />
       {isAdmin && tenantId && <CopyTenantButton tenantId={tenantId} />}
       <ThemeToggle />
     </header>

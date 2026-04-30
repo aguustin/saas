@@ -35,3 +35,80 @@
     @apply bg-page text-content antialiased;
   }
 }
+
+/* ── Impresión de ticket POS ─────────────────────────────────────
+ * Técnica de visibilidad: ocultar toda la UI, exponer solo el
+ * comprobante (#pos-ticket-content).  El elemento usa position:fixed
+ * para anclarse al origen de la hoja sin depender del flujo normal.
+ * ──────────────────────────────────────────────────────────────── */
+
+@media print {
+  @page {
+    margin: 10mm 8mm;
+  }
+
+  /* Ocultar toda la interfaz */
+  body * {
+    visibility: hidden;
+  }
+
+  /* Mostrar solo el comprobante */
+  #pos-ticket-content,
+  #pos-ticket-content * {
+    visibility: visible;
+  }
+
+  /* Anclar en el origen de la página impresa */
+  #pos-ticket-content {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: 72mm;          /* ancho estándar rollo 80 mm */
+    margin: 0 auto;
+
+    /* Reset del tema oscuro */
+    background:    white   !important;
+    color:         #000    !important;
+    border:        none    !important;
+    border-radius: 0       !important;
+    box-shadow:    none    !important;
+    padding:       0       !important;
+
+    font-family: 'Courier New', Courier, monospace;
+    font-size:   10pt;
+    line-height: 1.5;
+  }
+
+  /* Resetear colores de todos los hijos */
+  #pos-ticket-content * {
+    color:        #000         !important;
+    background:   transparent  !important;
+    border-color: #999         !important;
+  }
+
+  /* Encabezado del comprobante (CSS generado, sin tocar el componente) */
+  #pos-ticket-content::before {
+    content:        'COMPROBANTE DE VENTA';
+    display:        block;
+    text-align:     center;
+    font-weight:    bold;
+    font-size:      11pt;
+    letter-spacing: 0.05em;
+    border-bottom:  1px solid #aaa;
+    padding-bottom: 6pt;
+    margin-bottom:  8pt;
+    visibility:     visible;
+  }
+
+  /* Pie de comprobante */
+  #pos-ticket-content::after {
+    content:      '— Gracias por su compra —';
+    display:      block;
+    text-align:   center;
+    font-size:    9pt;
+    border-top:   1px solid #aaa;
+    padding-top:  6pt;
+    margin-top:   8pt;
+    visibility:   visible;
+  }
+}

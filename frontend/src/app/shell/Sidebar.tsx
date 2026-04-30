@@ -5,6 +5,7 @@ import {
   Receipt,
   Package,
   Warehouse,
+  ArrowLeftRight,
   Users,
   UserCog,
   CreditCard,
@@ -52,6 +53,12 @@ const NAV_ITEMS: NavItem[] = [
     path:         '/app/stock',
     label:        'Stock',
     icon:         Warehouse,
+    allowedRoles: ['manager', 'admin', 'owner'],
+  },
+  {
+    path:         '/app/stock/movements',
+    label:        'Movimientos',
+    icon:         ArrowLeftRight,
     allowedRoles: ['manager', 'admin', 'owner'],
   },
   {

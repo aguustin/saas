@@ -24,6 +24,9 @@ const ProductsPage = lazy(() =>
 const StockPage = lazy(() =>
   import('@/features/stock/pages/StockPage').then(m => ({ default: m.StockPage })),
 )
+const MovementsPage = lazy(() =>
+  import('@/features/stock/pages/MovementsPage').then(m => ({ default: m.MovementsPage })),
+)
 const EmployeesPage = lazy(() =>
   import('@/features/employees/pages/EmployeesPage').then(m => ({ default: m.EmployeesPage })),
 )
@@ -119,6 +122,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute allowedRoles={['manager', 'admin', 'owner']}>
             {wrap(<StockPage />)}
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path:    'stock/movements',
+        element: (
+          <ProtectedRoute allowedRoles={['manager', 'admin', 'owner']}>
+            {wrap(<MovementsPage />)}
           </ProtectedRoute>
         ),
       },

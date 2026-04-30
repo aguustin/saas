@@ -48,7 +48,7 @@ export function POSTicket({ ticket, onNewSale }: Props) {
       </div>
 
       {/* Comprobante */}
-      <div className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 space-y-3 text-sm">
+      <div id="pos-ticket-content" className="w-full bg-gray-800 border border-gray-700 rounded-xl p-4 space-y-3 text-sm">
 
         {sale ? <OnlineTicketBody sale={sale} /> : <OfflineTicketBody syncId={syncId} />}
 
