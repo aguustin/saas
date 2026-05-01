@@ -1,4 +1,4 @@
-import type { SaleResponse } from '@/shared/types'
+import type { SaleResponse, StockMovementRow, StockMovementType } from '@/shared/types'
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -99,19 +99,11 @@ function buildRows(sales: SaleResponse[]): string[][] {
   ])
 }
 
-// ── Public API ────────────────────────────────────────────────────
+// ── Shared download trigger ───────────────────────────────────────
 
-export function exportSalesToCsv(sales: SaleResponse[], filename = 'ventas.csv'): void {
-  if (sales.length === 0) return
-
-  const rows   = [HEADERS, ...buildRows(sales)]
-  const csv    = rows.map(r => r.map(cell).join(',')).join('\r\n')
-
-  // UTF-8 BOM — necesario para que Excel (Windows/Mac) abra el archivo
-  // con tildes y ñ sin corrupción de encoding
+function triggerDownload(csv: string, filename: string): void {
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
   const url  = URL.createObjectURL(blob)
-
   const a    = document.createElement('a')
   a.href     = url
   a.download = filename
@@ -119,4 +111,57 @@ export function exportSalesToCsv(sales: SaleResponse[], filename = 'ventas.csv')
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+}
+
+// ── Movements CSV ─────────────────────────────────────────────────
+
+const MOVEMENT_TYPE_LABEL: Record<StockMovementType, string> = {
+  purchase:   'Compra',
+  adjustment: 'Ajuste',
+  transfer:   'Transferencia',
+  return:     'Devolución',
+}
+
+const MOVEMENT_HEADERS = [
+  'id',
+  'fecha',
+  'sucursal',
+  'producto',
+  'tipo',
+  'cantidad',
+  'referencia',
+  'nota',
+  'usuario',
+]
+
+function buildMovementRows(rows: StockMovementRow[]): string[][] {
+  return rows.map(mv => [
+    `#${mv.id.slice(-8).toUpperCase()}`,
+    localDatetime(mv.created_at),
+    mv.branch_name,
+    mv.product_name,
+    MOVEMENT_TYPE_LABEL[mv.type] ?? mv.type,
+    mv.quantity > 0 ? `+${mv.quantity}` : String(mv.quantity),
+    mv.reference_id ? `#${mv.reference_id.slice(-8).toUpperCase()}` : '',
+    mv.note ?? '',
+    mv.created_by ? `#${mv.created_by.slice(-8).toUpperCase()}` : '',
+  ])
+}
+
+export function exportMovementsToCsv(
+  movements: StockMovementRow[],
+  filename = 'movimientos.csv',
+): void {
+  if (movements.length === 0) return
+  const rows = [MOVEMENT_HEADERS, ...buildMovementRows(movements)]
+  triggerDownload(rows.map(r => r.map(cell).join(',')).join('\r\n'), filename)
+}
+
+// ── Public API ────────────────────────────────────────────────────
+
+export function exportSalesToCsv(sales: SaleResponse[], filename = 'ventas.csv'): void {
+  if (sales.length === 0) return
+
+  const rows = [HEADERS, ...buildRows(sales)]
+  triggerDownload(rows.map(r => r.map(cell).join(',')).join('\r\n'), filename)
 }

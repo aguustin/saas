@@ -111,4 +111,61 @@
     margin-top:   8pt;
     visibility:   visible;
   }
+
+  /* Exclusión mutua: si el modal de Cierre de Turno está abierto,
+   * suprimir el ticket POS para que no se superpongan en la misma hoja.
+   * :has() tiene soporte ≥96% en navegadores modernos (2025). */
+  body:has(#shift-close-print) #pos-ticket-content,
+  body:has(#shift-close-print) #pos-ticket-content * {
+    visibility: hidden !important;
+  }
+
+  /* ── Cierre de turno (#shift-close-print) ───────────────────── */
+
+  #shift-close-print,
+  #shift-close-print * {
+    visibility: visible;
+  }
+
+  #shift-close-print {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    max-width: 72mm;
+    margin: 0 auto;
+
+    background:    white !important;
+    color:         #000  !important;
+    border:        none  !important;
+    border-radius: 0     !important;
+    box-shadow:    none  !important;
+    padding:       0     !important;
+
+    font-family: 'Courier New', Courier, monospace;
+    font-size:   10pt;
+    line-height: 1.5;
+  }
+
+  #shift-close-print * {
+    color:        #000        !important;
+    background:   transparent !important;
+    border-color: #999        !important;
+  }
+
+  /* Ocultar el botón X dentro del área imprimible */
+  #shift-close-print [data-noprint] {
+    display: none !important;
+  }
+
+  /* Pie con línea de firma */
+  #shift-close-print::after {
+    content:     'Firma: ___________________';
+    display:     block;
+    text-align:  left;
+    font-size:   9pt;
+    border-top:  1px solid #aaa;
+    padding-top: 6pt;
+    margin-top:  12pt;
+    visibility:  visible;
+  }
 }

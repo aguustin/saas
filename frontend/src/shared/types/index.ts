@@ -36,6 +36,15 @@ export interface ActiveSession {
   created_at:   string
 }
 
+// ── Customers ───────────────────────────────────────────────────
+
+export interface CustomerResponse {
+  id:         string
+  name:       string
+  email:      string | null
+  phone:      string | null
+}
+
 // ── Products ────────────────────────────────────────────────────
 
 export type ProductUnit = 'unit' | 'kg' | 'g' | 'l' | 'ml' | 'm' | 'cm'

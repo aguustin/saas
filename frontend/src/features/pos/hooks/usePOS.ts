@@ -7,7 +7,7 @@ import { isApiError, API_CODES, getStockDetails } from '@/shared/api/errors'
 import { useToastStore } from '@/shared/components/ui/Toast'
 import { paymentsApi } from '../api/payments.api'
 import type { MpQRResponse } from '../api/payments.api'
-import type { ProductResponse, SaleResponse, PaymentMethod } from '@/shared/types'
+import type { ProductResponse, SaleResponse, PaymentMethod, CustomerResponse } from '@/shared/types'
 import type { CreateSaleBody, MixedBreakdown } from '@/features/sales/api/sales.api'
 import type { InsufficientStockDetail } from '@/shared/api/errors'
 
@@ -56,8 +56,9 @@ export function usePOS() {
 
   // ── Carrito ───────────────────────────────────────────────────
 
-  const [items,          setItems]          = useState<CartItem[]>([])
-  const [globalDiscount, setGlobalDiscount] = useState(0)
+  const [items,            setItems]            = useState<CartItem[]>([])
+  const [globalDiscount,   setGlobalDiscount]   = useState(0)
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerResponse | null>(null)
 
   // ── Búsqueda ──────────────────────────────────────────────────
 
@@ -228,6 +229,7 @@ export function usePOS() {
   const clearCart = useCallback(() => {
     setItems([])
     setGlobalDiscount(0)
+    setSelectedCustomer(null)
     setQuery('')
     setSearchResults([])
   }, [])
@@ -244,6 +246,7 @@ export function usePOS() {
 
     const body: CreateSaleBody = {
       branch_id:       branchId,
+      customer_id:     selectedCustomer?.id ?? undefined,
       items:           items.map(i => ({
         product_id: i.product.id,
         quantity:   i.quantity,
@@ -371,6 +374,10 @@ export function usePOS() {
     removeItem,
     clearCart,
     totals,
+
+    // Cliente
+    selectedCustomer,
+    setSelectedCustomer,
 
     // Búsqueda
     query,

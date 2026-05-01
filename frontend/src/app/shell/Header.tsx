@@ -7,6 +7,7 @@ import { LowStockBadge } from '@/features/stock/components/LowStockBadge'
 import { ThemeToggle } from '@/shared/components/ui'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useToast } from '@/shared/components/ui/Toast'
+import { ShiftCloseButton } from '@/features/sales/components/ShiftCloseButton'
 
 const ROUTE_LABELS: Record<string, string> = {
   '/app/dashboard': 'Dashboard',
@@ -86,6 +87,7 @@ export function Header() {
       <h2 className="text-lg font-semibold text-content flex-1">{label}</h2>
       <SyncStatusIndicator />
       <LowStockBadge />
+      <ShiftCloseButton />
       {isAdmin && tenantId && <CopyTenantButton tenantId={tenantId} />}
       <ThemeToggle />
     </header>

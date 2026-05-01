@@ -6,6 +6,7 @@ import { POSCart } from '../components/POSCart'
 import { POSCheckout } from '../components/POSCheckout'
 import { POSTicket } from '../components/POSTicket'
 import { PaymentQRModal } from '../components/PaymentQRModal'
+import { CustomerSelector } from '../components/CustomerSelector'
 import { usePendingSalesCount } from '@/features/sync/store/sync.store'
 
 export function POSPage() {
@@ -18,6 +19,7 @@ export function POSPage() {
     stage, setStage, submitting, checkout, validateMixed,
     ticket, newSale, stockModal, setStockModal, isOnline,
     mpQRData, onMpApproved, cancelMpPayment,
+    selectedCustomer, setSelectedCustomer,
   } = usePOS()
 
   const pendingCount = usePendingSalesCount()
@@ -93,7 +95,7 @@ export function POSPage() {
 
         {/* Panel derecho: carrito */}
         <div className="w-80 xl:w-96 flex flex-col bg-surface p-4">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-semibold text-content">
               Carrito
               {items.length > 0 && (
@@ -111,6 +113,15 @@ export function POSPage() {
                 Vaciar
               </button>
             )}
+          </div>
+
+          <div className="mb-3">
+            <CustomerSelector
+              value={selectedCustomer}
+              onSelect={setSelectedCustomer}
+              disabled={submitting}
+              isOnline={isOnline}
+            />
           </div>
 
           <div className="flex-1 overflow-hidden">

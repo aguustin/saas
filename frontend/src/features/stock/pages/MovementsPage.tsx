@@ -1,5 +1,6 @@
 import { memo } from 'react'
-import { PackageMinus, RefreshCw, Search } from 'lucide-react'
+import { PackageMinus, RefreshCw, Search, Download } from 'lucide-react'
+import { exportMovementsToCsv } from '@/shared/utils/exportCsv'
 import { Badge } from '@/shared/components/ui/Badge'
 import { Pagination } from '@/shared/components/ui/Table'
 import { Skeleton } from '@/shared/components/ui/Skeleton'
@@ -42,18 +43,59 @@ export function MovementsPage() {
     refresh,
   } = useMovementsPage()
 
+  function handleExport() {
+    const filename = [
+      'movimientos',
+      dateFrom,
+      dateTo !== dateFrom ? dateTo : null,
+      productSearch || null,
+    ].filter(Boolean).join('_') + '.csv'
+
+    exportMovementsToCsv(movements, filename)
+  }
+
   return (
     <div className="p-6 space-y-5 max-w-screen-xl mx-auto">
 
       {/* Encabezado */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Movimientos de Stock</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          {total > 0
-            ? `${total} movimiento${total !== 1 ? 's' : ''} en el período seleccionado`
-            : 'Historial de entradas, ajustes y transferencias'
-          }
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Movimientos de Stock</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            {total > 0
+              ? `${total} movimiento${total !== 1 ? 's' : ''} en el período seleccionado`
+              : 'Historial de entradas, ajustes y transferencias'
+            }
+          </p>
+        </div>
+
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={movements.length === 0 || loading}
+            title={
+              total > limit
+                ? `Exporta los ${movements.length} movimientos de esta página (${total} en total)`
+                : `Exporta los ${movements.length} movimientos a CSV`
+            }
+            className="flex items-center gap-2 h-9 px-3 text-sm font-medium rounded-lg
+                       border border-gray-300 dark:border-gray-600
+                       text-gray-700 dark:text-gray-300
+                       bg-white dark:bg-gray-800
+                       hover:bg-gray-50 dark:hover:bg-gray-700
+                       disabled:opacity-40 disabled:cursor-not-allowed
+                       transition-colors"
+          >
+            <Download size={14} />
+            {total > limit ? 'Exportar página' : 'Exportar CSV'}
+          </button>
+          {total > limit && movements.length > 0 && (
+            <span className="text-[11px] text-amber-600 dark:text-amber-400">
+              {movements.length} de {total} filas
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Filtros */}

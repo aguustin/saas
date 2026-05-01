@@ -123,32 +123,62 @@ function buildStats(sales: SaleResponse[]): Stats30 {
   }
 }
 
+// Descarga todas las páginas del endpoint para evitar el corte en N ventas.
+// Usa páginas de 500 para minimizar round-trips sin exceder timeouts típicos.
+async function fetchAllSales(
+  params: Parameters<typeof salesApi.list>[0],
+): Promise<SaleResponse[]> {
+  const PAGE  = 500
+  const all: SaleResponse[] = []
+  let   offset = 0
+
+  while (true) {
+    const res = await salesApi.list({ ...params, limit: PAGE, offset })
+    all.push(...res.items)
+    if (all.length >= res.total || res.items.length < PAGE) break
+    offset += PAGE
+  }
+
+  return all
+}
+
 export function useDashboard30Days() {
   const { branchId }  = useAuth()
   const [sales,   setSales]   = useState<SaleResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState<string | null>(null)
 
-  const fromDate = useMemo(() => isoNDaysAgo(29), [])
+  // today como estado: se actualiza al recuperar el foco de pestaña.
+  // Esto desliza la ventana de 30 días si el usuario deja la app abierta
+  // durante la noche y vuelve al día siguiente.
+  const [today, setToday] = useState<string>(todayISO())
+
+  useEffect(() => {
+    const checkDate = () => {
+      const current = todayISO()
+      setToday(prev => (prev !== current ? current : prev))
+    }
+    window.addEventListener('focus', checkDate)
+    return () => window.removeEventListener('focus', checkDate)
+  }, [])
+
+  const fromDate = useMemo(() => isoNDaysAgo(29), [today])
 
   useEffect(() => {
     if (!branchId) return
     setLoading(true)
     setError(null)
 
-    salesApi
-      .list({
-        branch_id: branchId,
-        status:    'completed',
-        date_from: localDayStart(fromDate),
-        date_to:   localDayEnd(todayISO()),
-        limit:     1000,
-        offset:    0,
-      })
-      .then(res => setSales(res.items))
+    fetchAllSales({
+      branch_id: branchId,
+      status:    'completed',
+      date_from: localDayStart(fromDate),
+      date_to:   localDayEnd(today),
+    })
+      .then(setSales)
       .catch(err => setError(err instanceof Error ? err.message : 'Error al cargar datos'))
       .finally(() => setLoading(false))
-  }, [branchId, fromDate])
+  }, [branchId, fromDate, today])
 
   const dailyRevenue = useMemo(() => buildDayRevenue(sales, fromDate), [sales, fromDate])
   const topProducts  = useMemo(() => buildTopProducts(sales), [sales])
