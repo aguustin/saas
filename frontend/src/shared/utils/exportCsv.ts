@@ -1,4 +1,7 @@
+import * as XLSX from 'xlsx'
 import type { SaleResponse, StockMovementRow, StockMovementType } from '@/shared/types'
+
+type CellValue = string | number
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -17,19 +20,6 @@ const STATUS_LABEL: Record<string, string> = {
   refunded:  'Reembolsada',
 }
 
-/**
- * Escapa una celda CSV según RFC 4180:
- * - Si contiene coma, comilla o salto de línea → envuelve en comillas
- * - Las comillas internas se duplican
- */
-function cell(value: string | number | null | undefined): string {
-  if (value === null || value === undefined) return ''
-  const s = String(value)
-  return s.includes(',') || s.includes('"') || s.includes('\n')
-    ? `"${s.replace(/"/g, '""')}"`
-    : s
-}
-
 function localDatetime(iso: string): string {
   return new Intl.DateTimeFormat('es', {
     day: '2-digit', month: '2-digit', year: 'numeric',
@@ -42,7 +32,7 @@ function paymentDetail(sale: SaleResponse): string {
   switch (sale.payment_method) {
     case 'card': {
       const parts = []
-      if (d.card_last4)   parts.push(`•••• ${d.card_last4}`)
+      if (d.card_last4)                     parts.push(`•••• ${d.card_last4}`)
       if (d.installments && d.installments > 1) parts.push(`${d.installments} cuotas`)
       return parts.join(' ')
     }
@@ -67,44 +57,28 @@ function productsSummary(sale: SaleResponse): string {
     .join(' | ')
 }
 
-// ── CSV builder ───────────────────────────────────────────────────
+// ── Shared XLSX download ──────────────────────────────────────────
 
-const HEADERS = [
-  'n_venta',
-  'fecha',
-  'estado',
-  'metodo_pago',
-  'detalle_pago',
-  'subtotal',
-  'descuento',
-  'impuesto',
-  'total',
-  'productos',
-  'notas',
-]
+function triggerDownload(rows: CellValue[][], filename: string): void {
+  const ws = XLSX.utils.aoa_to_sheet(rows)
 
-function buildRows(sales: SaleResponse[]): string[][] {
-  return sales.map(s => [
-    `#${s.id.slice(-8).toUpperCase()}`,
-    localDatetime(s.created_at),
-    STATUS_LABEL[s.status]  ?? s.status,
-    METHOD_LABEL[s.payment_method] ?? s.payment_method,
-    paymentDetail(s),
-    s.subtotal.toFixed(2),
-    s.discount.toFixed(2),
-    s.tax.toFixed(2),
-    s.total.toFixed(2),
-    productsSummary(s),
-    s.notes ?? '',
-  ])
-}
+  // Ancho de columna automático basado en el contenido más largo
+  ws['!cols'] = rows[0].map((_, colIdx) => ({
+    wch: Math.min(60, Math.max(
+      8,
+      ...rows.map(row => String(row[colIdx] ?? '').length),
+    )) + 1,
+  }))
 
-// ── Shared download trigger ───────────────────────────────────────
+  const wb  = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'Datos')
 
-function triggerDownload(csv: string, filename: string): void {
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
-  const url  = URL.createObjectURL(blob)
-  const a    = document.createElement('a')
+  const buf  = XLSX.write(wb, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer
+  const blob = new Blob([buf], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  })
+  const url = URL.createObjectURL(blob)
+  const a   = document.createElement('a')
   a.href     = url
   a.download = filename
   document.body.appendChild(a)
@@ -113,7 +87,35 @@ function triggerDownload(csv: string, filename: string): void {
   URL.revokeObjectURL(url)
 }
 
-// ── Movements CSV ─────────────────────────────────────────────────
+// ── Sales XLSX ────────────────────────────────────────────────────
+
+const SALES_HEADERS: CellValue[] = [
+  'N° Venta', 'Fecha', 'Estado', 'Método de pago', 'Detalle pago',
+  'Subtotal', 'Descuento', 'Impuesto', 'Total', 'Productos', 'Notas',
+]
+
+function buildSalesRows(sales: SaleResponse[]): CellValue[][] {
+  return sales.map(s => [
+    `#${s.id.slice(-8).toUpperCase()}`,
+    localDatetime(s.created_at),
+    STATUS_LABEL[s.status]  ?? s.status,
+    METHOD_LABEL[s.payment_method] ?? s.payment_method,
+    paymentDetail(s),
+    s.subtotal,
+    s.discount,
+    s.tax,
+    s.total,
+    productsSummary(s),
+    s.notes ?? '',
+  ])
+}
+
+export function exportSalesToCsv(sales: SaleResponse[], filename = 'ventas.xlsx'): void {
+  if (sales.length === 0) return
+  triggerDownload([SALES_HEADERS, ...buildSalesRows(sales)], filename)
+}
+
+// ── Movements XLSX ────────────────────────────────────────────────
 
 const MOVEMENT_TYPE_LABEL: Record<StockMovementType, string> = {
   purchase:   'Compra',
@@ -122,26 +124,19 @@ const MOVEMENT_TYPE_LABEL: Record<StockMovementType, string> = {
   return:     'Devolución',
 }
 
-const MOVEMENT_HEADERS = [
-  'id',
-  'fecha',
-  'sucursal',
-  'producto',
-  'tipo',
-  'cantidad',
-  'referencia',
-  'nota',
-  'usuario',
+const MOVEMENTS_HEADERS: CellValue[] = [
+  'ID', 'Fecha', 'Sucursal', 'Producto', 'Tipo',
+  'Cantidad', 'Referencia', 'Nota', 'Usuario',
 ]
 
-function buildMovementRows(rows: StockMovementRow[]): string[][] {
+function buildMovementRows(rows: StockMovementRow[]): CellValue[][] {
   return rows.map(mv => [
     `#${mv.id.slice(-8).toUpperCase()}`,
     localDatetime(mv.created_at),
     mv.branch_name,
     mv.product_name,
     MOVEMENT_TYPE_LABEL[mv.type] ?? mv.type,
-    mv.quantity > 0 ? `+${mv.quantity}` : String(mv.quantity),
+    mv.quantity,
     mv.reference_id ? `#${mv.reference_id.slice(-8).toUpperCase()}` : '',
     mv.note ?? '',
     mv.created_by ? `#${mv.created_by.slice(-8).toUpperCase()}` : '',
@@ -150,18 +145,8 @@ function buildMovementRows(rows: StockMovementRow[]): string[][] {
 
 export function exportMovementsToCsv(
   movements: StockMovementRow[],
-  filename = 'movimientos.csv',
+  filename = 'movimientos.xlsx',
 ): void {
   if (movements.length === 0) return
-  const rows = [MOVEMENT_HEADERS, ...buildMovementRows(movements)]
-  triggerDownload(rows.map(r => r.map(cell).join(',')).join('\r\n'), filename)
-}
-
-// ── Public API ────────────────────────────────────────────────────
-
-export function exportSalesToCsv(sales: SaleResponse[], filename = 'ventas.csv'): void {
-  if (sales.length === 0) return
-
-  const rows = [HEADERS, ...buildRows(sales)]
-  triggerDownload(rows.map(r => r.map(cell).join(',')).join('\r\n'), filename)
+  triggerDownload([MOVEMENTS_HEADERS, ...buildMovementRows(movements)], filename)
 }

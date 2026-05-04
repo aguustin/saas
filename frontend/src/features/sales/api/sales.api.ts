@@ -49,6 +49,7 @@ export interface SalesFilters {
 }
 
 export interface RefundBody {
+  reason:   string
   restock?: boolean
   items?:   Array<{ sale_item_id: string; quantity: number }>
 }
@@ -72,7 +73,7 @@ export const salesApi = {
     return http.post<SaleResponse>('/sales', body).then(r => r.data)
   },
 
-  refund(id: string, body: RefundBody = {}): Promise<SaleResponse> {
+  refund(id: string, body: RefundBody): Promise<SaleResponse> {
     return http.post<SaleResponse>(`/sales/${id}/refund`, body).then(r => r.data)
   },
 }

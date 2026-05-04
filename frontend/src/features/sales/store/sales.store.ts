@@ -44,7 +44,7 @@ interface SalesActions {
 
   // Escritura
   create: (body: CreateSaleBody) => Promise<SaleResponse>
-  refund: (id: string, body?: RefundBody) => Promise<SaleResponse>
+  refund: (id: string, body: RefundBody) => Promise<SaleResponse>
 
   // Filtros
   setFilters: (f: Partial<SalesFilters>) => void
@@ -177,7 +177,7 @@ export const useSalesStore = create<SalesState & SalesActions>((set, get) => ({
   // Optimistic: marcamos el item como 'refunded' en la lista antes
   // de que el servidor confirme, revertimos en error.
 
-  refund: async (id, body = {}) => {
+  refund: async (id, body) => {
     const snapshot = get().items
     set(s => ({
       items:     s.items.map(sale =>

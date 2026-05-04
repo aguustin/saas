@@ -30,7 +30,7 @@ export function SalesPage() {
       dateFrom,
       dateTo !== dateFrom ? dateTo : null,
       pageCount > 1 ? `p${page}` : null,
-    ].filter(Boolean).join('_') + '.csv'
+    ].filter(Boolean).join('_') + '.xlsx'
 
     exportSalesToCsv(items, filename)
   }

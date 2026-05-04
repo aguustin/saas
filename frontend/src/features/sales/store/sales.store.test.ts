@@ -185,7 +185,7 @@ describe('sales.store — refund', () => {
       return refunded
     })
 
-    await useSalesStore.getState().refund('sale-1')
+    await useSalesStore.getState().refund('sale-1', { reason: 'test' })
 
     expect(statusDuringCall).toBe('refunded')
     expect(useSalesStore.getState().items[0]).toEqual(refunded)
@@ -197,7 +197,7 @@ describe('sales.store — refund', () => {
     useSalesStore.setState({ items: [sale] })
     vi.mocked(salesApi.refund).mockResolvedValue(refunded)
 
-    await useSalesStore.getState().refund('sale-1')
+    await useSalesStore.getState().refund('sale-1', { reason: 'test' })
 
     expect(useSalesStore.getState().refunding).toBe(false)
   })
@@ -208,7 +208,7 @@ describe('sales.store — refund', () => {
     useSalesStore.setState({ items: [sale], current: sale })
     vi.mocked(salesApi.refund).mockResolvedValue(refunded)
 
-    await useSalesStore.getState().refund('sale-1')
+    await useSalesStore.getState().refund('sale-1', { reason: 'test' })
 
     expect(useSalesStore.getState().current?.status).toBe('refunded')
   })
@@ -220,7 +220,7 @@ describe('sales.store — refund', () => {
     useSalesStore.setState({ items: [sale], current: otherSale })
     vi.mocked(salesApi.refund).mockResolvedValue(refunded)
 
-    await useSalesStore.getState().refund('sale-1')
+    await useSalesStore.getState().refund('sale-1', { reason: 'test' })
 
     expect(useSalesStore.getState().current?.id).toBe('sale-2')
   })
@@ -230,7 +230,7 @@ describe('sales.store — refund', () => {
     useSalesStore.setState({ items: [sale] })
     vi.mocked(salesApi.refund).mockRejectedValue(new Error('server error'))
 
-    await expect(useSalesStore.getState().refund('sale-1')).rejects.toThrow()
+    await expect(useSalesStore.getState().refund('sale-1', { reason: 'test' })).rejects.toThrow()
 
     expect(useSalesStore.getState().items[0].status).toBe('completed')
     expect(useSalesStore.getState().refunding).toBe(false)
@@ -247,7 +247,7 @@ describe('sales.store — refund', () => {
     })
     vi.mocked(salesApi.refund).mockResolvedValue(refunded)
 
-    await useSalesStore.getState().refund('sale-1')
+    await useSalesStore.getState().refund('sale-1', { reason: 'test' })
 
     expect(useSalesStore.getState().summaries[cacheKey]).toBeUndefined()
   })

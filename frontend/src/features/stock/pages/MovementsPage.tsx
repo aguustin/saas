@@ -49,7 +49,7 @@ export function MovementsPage() {
       dateFrom,
       dateTo !== dateFrom ? dateTo : null,
       productSearch || null,
-    ].filter(Boolean).join('_') + '.csv'
+    ].filter(Boolean).join('_') + '.xlsx'
 
     exportMovementsToCsv(movements, filename)
   }

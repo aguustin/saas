@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, RotateCcw, Loader2, AlertTriangle, Package } from 'lucide-react'
+import { X, RotateCcw, AlertTriangle, Package } from 'lucide-react'
 import { createPortal } from 'react-dom'
 import { SaleStatusBadge } from '@/shared/components/ui/Badge'
 import { Button } from '@/shared/components/ui/Button'
@@ -36,13 +36,14 @@ export function SaleDetailPanel({ saleId, onClose, onRefund }: Props) {
 
   const [refundMode,    setRefundMode]    = useState<'none' | 'total' | 'partial'>('none')
   const [partialQtys,  setPartialQtys]   = useState<Record<string, number>>({})
+  const [refundReason, setRefundReason]  = useState('')
   const [refundError,  setRefundError]   = useState<string | null>(null)
   const [confirmOpen,  setConfirmOpen]   = useState(false)
 
   function openTotalRefund() {
     setRefundMode('total')
+    setRefundReason('')
     setRefundError(null)
-    setConfirmOpen(true)
   }
 
   function openPartialRefund() {
@@ -51,14 +52,25 @@ export function SaleDetailPanel({ saleId, onClose, onRefund }: Props) {
     sale.items.forEach(item => { initial[item.id] = 0 })
     setPartialQtys(initial)
     setRefundMode('partial')
+    setRefundReason('')
     setRefundError(null)
   }
 
   function cancelRefund() {
     setRefundMode('none')
     setPartialQtys({})
+    setRefundReason('')
     setRefundError(null)
     setConfirmOpen(false)
+  }
+
+  function requestConfirm() {
+    if (!refundReason.trim()) {
+      setRefundError('El motivo del reembolso es requerido.')
+      return
+    }
+    setRefundError(null)
+    setConfirmOpen(true)
   }
 
   async function executeRefund() {
@@ -66,7 +78,7 @@ export function SaleDetailPanel({ saleId, onClose, onRefund }: Props) {
     setRefundError(null)
     setConfirmOpen(false)
 
-    let body: RefundBody = { restock: true }
+    let body: RefundBody = { reason: refundReason.trim(), restock: true }
 
     if (refundMode === 'partial') {
       const items = Object.entries(partialQtys)
@@ -78,7 +90,7 @@ export function SaleDetailPanel({ saleId, onClose, onRefund }: Props) {
         return
       }
 
-      body = { restock: true, items }
+      body = { reason: refundReason.trim(), restock: true, items }
     }
 
     try {
@@ -179,13 +191,27 @@ export function SaleDetailPanel({ saleId, onClose, onRefund }: Props) {
                 </div>
               )}
 
+              {/* Reembolso total UI */}
+              {refundMode === 'total' && (
+                <TotalRefundSection
+                  total={sale.total}
+                  reason={refundReason}
+                  onReasonChange={setRefundReason}
+                  onConfirm={requestConfirm}
+                  onCancel={cancelRefund}
+                  loading={refunding}
+                />
+              )}
+
               {/* Reembolso parcial UI */}
               {refundMode === 'partial' && (
                 <PartialRefundSection
                   items={sale.items}
                   qtys={partialQtys}
                   onChange={(id, qty) => setPartialQtys(prev => ({ ...prev, [id]: qty }))}
-                  onConfirm={() => setConfirmOpen(true)}
+                  reason={refundReason}
+                  onReasonChange={setRefundReason}
+                  onConfirm={requestConfirm}
                   onCancel={cancelRefund}
                   loading={refunding}
                 />
@@ -424,18 +450,90 @@ function PaymentSection({ sale }: { sale: SaleResponse }) {
   )
 }
 
+// ── ReasonField — campo compartido entre total y parcial ──────────
+
+function ReasonField({
+  value, onChange,
+}: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800">
+      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
+        Motivo del reembolso <span className="text-red-500 dark:text-red-400">*</span>
+      </label>
+      <textarea
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder="Ej: producto defectuoso, error en cobro..."
+        rows={2}
+        maxLength={200}
+        className="w-full text-sm rounded-lg resize-none
+                   border border-gray-300 dark:border-gray-600
+                   bg-white dark:bg-gray-800
+                   text-gray-900 dark:text-gray-100
+                   placeholder:text-gray-400 dark:placeholder:text-gray-500
+                   px-3 py-2
+                   focus:outline-none focus:ring-2 focus:ring-brand-500
+                   transition-colors"
+      />
+    </div>
+  )
+}
+
+// ── TotalRefundSection ────────────────────────────────────────────
+
+interface TotalRefundProps {
+  total:          number
+  reason:         string
+  onReasonChange: (v: string) => void
+  onConfirm:      () => void
+  onCancel:       () => void
+  loading:        boolean
+}
+
+function TotalRefundSection({ total, reason, onReasonChange, onConfirm, onCancel, loading }: TotalRefundProps) {
+  return (
+    <div className="border border-red-200 dark:border-red-800 rounded-xl overflow-hidden">
+      <div className="bg-red-50 dark:bg-red-950/30 px-4 py-2.5 flex items-center gap-2">
+        <RotateCcw size={13} className="text-red-600 dark:text-red-400" />
+        <p className="text-sm font-medium text-red-700 dark:text-red-300">
+          Reembolso total — ${total.toFixed(2)}
+        </p>
+      </div>
+
+      <ReasonField value={reason} onChange={onReasonChange} />
+
+      <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2">
+        <Button
+          variant="danger"
+          size="sm"
+          disabled={!reason.trim() || loading}
+          loading={loading}
+          onClick={onConfirm}
+        >
+          Confirmar reembolso
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onCancel} disabled={loading}>
+          Cancelar
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 // ── PartialRefundSection ──────────────────────────────────────────
 
 interface PartialRefundProps {
-  items:    SaleItemResponse[]
-  qtys:     Record<string, number>
-  onChange: (id: string, qty: number) => void
-  onConfirm:() => void
-  onCancel: () => void
-  loading:  boolean
+  items:          SaleItemResponse[]
+  qtys:           Record<string, number>
+  onChange:       (id: string, qty: number) => void
+  reason:         string
+  onReasonChange: (v: string) => void
+  onConfirm:      () => void
+  onCancel:       () => void
+  loading:        boolean
 }
 
-function PartialRefundSection({ items, qtys, onChange, onConfirm, onCancel, loading }: PartialRefundProps) {
+function PartialRefundSection({ items, qtys, onChange, reason, onReasonChange, onConfirm, onCancel, loading }: PartialRefundProps) {
   const hasSelection = Object.values(qtys).some(q => q > 0)
 
   return (
@@ -475,22 +573,19 @@ function PartialRefundSection({ items, qtys, onChange, onConfirm, onCancel, load
         ))}
       </div>
 
+      <ReasonField value={reason} onChange={onReasonChange} />
+
       <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 flex items-center gap-2">
         <Button
           variant="danger"
           size="sm"
-          disabled={!hasSelection || loading}
+          disabled={!hasSelection || !reason.trim() || loading}
           loading={loading}
           onClick={onConfirm}
         >
           Confirmar reembolso
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onCancel}
-          disabled={loading}
-        >
+        <Button variant="ghost" size="sm" onClick={onCancel} disabled={loading}>
           Cancelar
         </Button>
       </div>
