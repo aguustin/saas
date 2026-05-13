@@ -24,7 +24,8 @@
       "Bash(taskkill //PID 26080 //F)",
       "Bash(node -e \"const mp = require\\('/c/saas/backend/node_modules/mercadopago'\\); console.log\\(Object.keys\\(mp\\)\\)\")",
       "Bash(node -e \"console.log\\(require\\('./node_modules/zustand/package.json'\\).version\\)\")",
-      "Bash(node -e \"require\\('xlsx'\\); console.log\\('ok'\\)\")"
+      "Bash(node -e \"require\\('xlsx'\\); console.log\\('ok'\\)\")",
+      "Bash(docker compose *)"
     ]
   }
 }

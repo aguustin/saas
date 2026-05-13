@@ -13,13 +13,26 @@ export interface LogoutBody {
   all_devices: boolean
 }
 
+export interface RegisterBody {
+  business_name: string
+  email:         string
+  password:      string
+  country?:      string
+  device_id:     string
+  device_name?:  string
+}
+
+export interface RegisterResponse extends TokenPair {
+  tenant_id: string
+}
+
 export const authApi = {
-  login(body: LoginBody, tenantId: string): Promise<TokenPair> {
-    // _tenantId es consumido por el request interceptor para inyectar
-    // el header X-Tenant-Id en lugar de Authorization: Bearer.
-    return http
-      .post<TokenPair>('/auth/login', body, { _tenantId: tenantId } as never)
-      .then(r => r.data)
+  register(body: RegisterBody): Promise<RegisterResponse> {
+    return http.post<RegisterResponse>('/auth/register', body).then(r => r.data)
+  },
+
+  login(body: LoginBody): Promise<TokenPair> {
+    return http.post<TokenPair>('/auth/login', body).then(r => r.data)
   },
 
   refresh(refreshToken: string, deviceId: string): Promise<TokenPair> {

@@ -2,7 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { Shell } from '@/app/shell/Shell'
 import { ProtectedRoute } from '@/shared/components/ProtectedRoute'
-import { LoginPage } from '@/features/auth/pages/LoginPage'
+import { LoginPage }    from '@/features/auth/pages/LoginPage'
+import { RegisterPage } from '@/features/auth/pages/RegisterPage'
 import { SuspendedPage } from '@/features/billing/pages/SuspendedPage'
 import { ExpiredPage } from '@/features/billing/pages/ExpiredPage'
 import { Spinner } from '@/shared/components/Spinner'
@@ -64,6 +65,10 @@ export const router = createBrowserRouter([
   {
     path:    '/login',
     element: <LoginPage />,
+  },
+  {
+    path:    '/register',
+    element: <RegisterPage />,
   },
   {
     path:    '/suspended',

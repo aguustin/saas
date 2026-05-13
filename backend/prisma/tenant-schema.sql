@@ -196,7 +196,7 @@ CREATE TABLE IF NOT EXISTS :schema.stock_movements (
   type         TEXT          NOT NULL
                                CHECK (type IN ('sale','purchase','adjustment','transfer','return')),
   quantity     NUMERIC(12,3) NOT NULL,   -- negativo = salida, positivo = entrada
-  reference_id UUID,                     -- sale_id, purchase_id, etc.
+  reference_id TEXT,                     -- referencia libre: nro factura, remito, etc.
   note         TEXT,
   created_by   UUID          REFERENCES :schema.users(id),
   created_at   TIMESTAMPTZ   NOT NULL DEFAULT now(),

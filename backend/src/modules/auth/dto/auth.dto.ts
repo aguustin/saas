@@ -1,5 +1,16 @@
 import { z } from 'zod'
 
+export const RegisterSchema = z.object({
+  business_name: z.string().min(2).max(100),
+  email:         z.string().email(),
+  password:      z.string().min(8).max(100),
+  country:       z.string().length(2).optional().default('AR'),
+  device_id:     z.string().min(1).max(200),
+  device_name:   z.string().max(200).optional(),
+})
+
+export type RegisterDto = z.infer<typeof RegisterSchema>
+
 export const LoginSchema = z.object({
   email:       z.string().email(),
   password:    z.string().min(1),

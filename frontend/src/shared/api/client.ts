@@ -28,7 +28,7 @@ const MAX_RETRIES = 3
 const BASE_DELAY  = 600     // ms — se duplica por intento: 600, 1200, 2400
 
 /** Rutas que no llevan Bearer token */
-const AUTH_BYPASS = new Set(['/auth/login', '/auth/refresh'])
+const AUTH_BYPASS = new Set(['/auth/login', '/auth/refresh', '/auth/register'])
 
 /**
  * Estados HTTP que justifican un reintento automático:

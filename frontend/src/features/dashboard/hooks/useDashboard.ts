@@ -3,7 +3,7 @@ import { useSalesStore, useDailySummary } from '@/features/sales/store/sales.sto
 import { useBillingStore } from '@/features/billing/store/billing.store'
 import { useSyncStore, usePendingSalesCount } from '@/features/sync/store/sync.store'
 import { useAuth } from '@/features/auth/hooks/useAuth'
-import { todayISO } from '@/shared/utils/date'
+import { todayISO, localDayStart, localDayEnd } from '@/shared/utils/date'
 import type { ResourceLimit } from '@/shared/types'
 
 // ── Hook ──────────────────────────────────────────────────────────
@@ -32,8 +32,8 @@ export function useDashboard() {
     if (!branchId) return
     void fetchSales({
       branch_id: branchId,
-      date_from: today,
-      date_to:   today,
+      date_from: localDayStart(today),
+      date_to:   localDayEnd(today),
       limit:     8,
       offset:    0,
     })

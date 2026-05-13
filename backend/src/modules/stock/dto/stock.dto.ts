@@ -12,7 +12,7 @@ export const AddStockSchema = z.object({
   type:        MovementType,
   unit_cost:   z.number().nonnegative().optional().nullable(),
   note:        z.string().max(300).optional().nullable(),
-  reference_id: z.string().uuid().optional().nullable(),  // purchase_id, etc.
+  reference_id: z.string().max(200).optional().nullable(),
 })
 
 export const AdjustStockSchema = z.object({
@@ -40,7 +40,7 @@ export const CreateMovementSchema = z.object({
   branch_id:    z.string().uuid(),
   type:         MovementType,
   quantity:     z.number().refine(v => v !== 0, { message: 'Quantity cannot be zero' }),
-  reference_id: z.string().uuid().optional().nullable(),
+  reference_id: z.string().max(200).optional().nullable(),
   note:         z.string().max(300).optional().nullable(),
 })
 export type CreateMovementDto = z.infer<typeof CreateMovementSchema>

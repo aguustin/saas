@@ -20,9 +20,10 @@ import { TenantGuard }       from '@common/guards/tenant.guard'
 import { CurrentUser }       from '@common/decorators/current-user.decorator'
 import { ZodValidationPipe } from '@common/pipes/zod-validation.pipe'
 import {
-  LoginSchema,   LoginDto,
-  RefreshSchema, RefreshDto,
-  LogoutSchema,  LogoutDto,
+  LoginSchema,    LoginDto,
+  RefreshSchema,  RefreshDto,
+  LogoutSchema,   LogoutDto,
+  RegisterSchema, RegisterDto,
 } from './dto/auth.dto'
 import type { JwtPayload } from '@common/types/jwt-payload'
 
@@ -30,6 +31,19 @@ import type { JwtPayload } from '@common/types/jwt-payload'
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+  /**
+   * Registro público — crea tenant + usuario owner + auto-login
+   */
+  @Post('register')
+  @Public()
+  @HttpCode(HttpStatus.CREATED)
+  async register(
+    @Body(new ZodValidationPipe(RegisterSchema)) dto: RegisterDto,
+    @Req() req: Request,
+  ) {
+    return this.authService.register(dto, this.getIp(req), req.headers['user-agent'] ?? '')
+  }
 
   /**
    * Login — requiere tenant_id en header X-Tenant-Id
@@ -40,16 +54,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(
     @Body(new ZodValidationPipe(LoginSchema)) dto: LoginDto,
-    @Headers('x-tenant-id') tenantId: string,
+    @Headers('x-tenant-id') tenantId: string | undefined,
     @Req() req: Request,
   ) {
-    if (!tenantId || !/^[0-9a-f-]{36}$/i.test(tenantId)) {
-      throw new Error('Missing or invalid X-Tenant-Id header')
-    }
+    const resolvedTenantId =
+      tenantId && /^[0-9a-f-]{36}$/i.test(tenantId) ? tenantId : null
 
     return this.authService.login(
       dto,
-      tenantId,
+      resolvedTenantId,
       this.getIp(req),
       req.headers['user-agent'] ?? '',
     )

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Store, Eye, EyeOff } from 'lucide-react'
 import { useLogin } from '@/features/auth/hooks/useLogin'
 import { Input } from '@/shared/components/ui/Input'
@@ -37,18 +38,6 @@ export function LoginPage() {
                      border border-gray-200 dark:border-gray-800 p-8"
         >
           <form onSubmit={submit} className="space-y-5" noValidate>
-
-            <Input
-              label="ID de Tienda"
-              type="text"
-              value={form.tenantId}
-              onChange={e => setField('tenantId', e.target.value)}
-              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              error={fieldErrors.tenantId}
-              hint="UUID del tenant (visible en la URL de tu cuenta)"
-              autoComplete="off"
-              spellCheck={false}
-            />
 
             <Input
               label="Email"
@@ -107,10 +96,22 @@ export function LoginPage() {
           </form>
         </div>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-6">
-          ¿Problemas para ingresar? Contactá al administrador de tu tienda.
-        </p>
+        {/* Links */}
+        <div className="mt-6 space-y-2 text-center">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            ¿No tenés cuenta?{' '}
+            <Link
+              to="/register"
+              className="font-medium text-brand-600 dark:text-brand-400
+                         hover:text-brand-700 dark:hover:text-brand-300 transition-colors"
+            >
+              Registrate gratis
+            </Link>
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-600">
+            ¿Problemas para ingresar? Contactá al administrador de tu tienda.
+          </p>
+        </div>
 
       </div>
     </div>

@@ -178,6 +178,16 @@ model BillingEvent {
   @@schema("public")
 }
 
+// ─── User → Tenant lookup (permite login sin tenant_id) ─────────────────────
+
+model UserTenantMap {
+  email    String @id
+  tenantId String @map("tenant_id")
+
+  @@map("user_tenant_map")
+  @@schema("public")
+}
+
 // ─── Refresh Tokens ──────────────────────────────────────────────────────────
 
 model RefreshToken {
