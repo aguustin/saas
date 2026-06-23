@@ -21,7 +21,7 @@ import type { ApiError, TokenPair } from '@/shared/types'
 
 // ── Configuración ────────────────────────────────────────────────
 
-export const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1'
+export const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:4003/api/v1'
 
 const TIMEOUT_MS  = 15_000  // 15 s
 const MAX_RETRIES = 3
